@@ -1,0 +1,2207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KREAVO — AI Crew Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #080b10;
+  --bg2: #0d1117;
+  --bg3: #111827;
+  --border: rgba(255,255,255,0.07);
+  --border-active: rgba(99,210,160,0.35);
+  --accent: #63d2a0;
+  --accent2: #3b9eff;
+  --accent3: #f59e42;
+  --accent4: #e05cff;
+  --text: #e8edf3;
+  --muted: #5a6478;
+  --muted2: #8a95a8;
+  --card: rgba(255,255,255,0.035);
+  --card-hover: rgba(255,255,255,0.06);
+  --glow: 0 0 40px rgba(99,210,160,0.12);
+  --sidebar-w: 220px;
+  --topbar-h: 56px;
+  --bottomnav-h: 64px;
+}
+
+/* Light mode */
+body.light {
+  --bg: #f0f4f8;
+  --bg2: #e4eaf0;
+  --bg3: #dde4ed;
+  --border: rgba(0,0,0,0.08);
+  --border-active: rgba(16,130,80,0.35);
+  --accent: #108250;
+  --accent2: #1a6cc4;
+  --accent3: #d47800;
+  --accent4: #a020cc;
+  --text: #0f1923;
+  --muted: #9aa3b0;
+  --muted2: #5a6478;
+  --card: rgba(255,255,255,0.7);
+  --card-hover: rgba(255,255,255,0.9);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99,210,160,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,210,160,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.light::before {
+  background-image:
+    linear-gradient(rgba(16,130,80,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16,130,80,0.04) 1px, transparent 1px);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(99,210,160,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===================== LAYOUT ===================== */
+.app { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+/* ===================== SIDEBAR (PC) ===================== */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  border-right: 1px solid var(--border);
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(8,11,16,0.92);
+  backdrop-filter: blur(20px);
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  z-index: 200;
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1), width 0.3s;
+  overflow: hidden;
+}
+
+body.light .sidebar {
+  background: rgba(230,238,248,0.95);
+}
+
+.sidebar.collapsed {
+  width: 64px;
+}
+
+.sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  padding: 24px 0;
+  overflow: hidden;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+  padding: 0 8px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  min-height: 52px;
+}
+
+.logo-text { transition: opacity 0.2s; }
+.sidebar.collapsed .logo-text { opacity: 0; pointer-events: none; }
+
+.logo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.nav-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  padding: 4px 10px;
+  text-transform: uppercase;
+  margin-top: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+
+.sidebar.collapsed .nav-label { opacity: 0; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted2);
+  transition: all 0.2s;
+  font-size: 13.5px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  position: relative;
+}
+
+.nav-item:hover { background: var(--card); color: var(--text); }
+
+.nav-item.active {
+  background: rgba(99,210,160,0.08);
+  border-color: var(--border-active);
+  color: var(--accent);
+}
+
+body.light .nav-item.active {
+  background: rgba(16,130,80,0.1);
+}
+
+.nav-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+
+.nav-text { transition: opacity 0.2s; }
+.sidebar.collapsed .nav-text { opacity: 0; }
+
+/* Tooltip on collapsed sidebar */
+.sidebar.collapsed .nav-item::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 68px;
+  background: var(--bg3);
+  color: var(--text);
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 999;
+}
+
+.sidebar.collapsed .nav-item:hover::after { opacity: 1; }
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--card);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #000;
+  flex-shrink: 0;
+}
+
+.user-info { flex: 1; overflow: hidden; transition: opacity 0.2s; }
+.sidebar.collapsed .user-info { opacity: 0; }
+.user-name { font-weight: 600; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-plan { font-size: 11px; color: var(--accent); font-family: 'DM Mono', monospace; }
+
+/* Collapse toggle btn */
+.collapse-btn {
+  position: absolute;
+  right: -13px;
+  top: 40px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--muted2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  z-index: 201;
+  transition: all 0.2s;
+}
+
+.collapse-btn:hover { color: var(--accent); border-color: var(--border-active); }
+
+/* ===================== MAIN ===================== */
+.main {
+  flex: 1;
+  padding: 28px 32px;
+  margin-left: var(--sidebar-w);
+  overflow-y: auto;
+  min-height: 100vh;
+  transition: margin-left 0.3s;
+}
+
+.main.collapsed-main { margin-left: 64px; }
+
+/* ===================== TOP BAR (MOBILE) ===================== */
+.topbar {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--topbar-h);
+  background: rgba(8,11,16,0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 300;
+}
+
+body.light .topbar { background: rgba(230,238,248,0.97); }
+
+.topbar-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--accent);
+  display: flex; align-items: center; gap: 8px;
+  flex: 1;
+}
+
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.icon-btn:hover { color: var(--text); background: var(--card-hover); }
+
+.notif-badge {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent3);
+  border: 2px solid var(--bg);
+}
+
+/* ===================== OVERLAY ===================== */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 199;
+  backdrop-filter: blur(2px);
+}
+
+.overlay.active { display: block; }
+
+/* ===================== SEARCH BAR ===================== */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 14px;
+  height: 38px;
+  transition: all 0.2s;
+  cursor: text;
+  flex: 1;
+  max-width: 300px;
+}
+
+.search-bar:focus-within {
+  border-color: var(--border-active);
+  background: var(--card-hover);
+  box-shadow: 0 0 0 3px rgba(99,210,160,0.08);
+}
+
+.search-bar input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  width: 100%;
+}
+
+.search-bar input::placeholder { color: var(--muted); }
+.search-icon { color: var(--muted); font-size: 14px; flex-shrink: 0; }
+
+/* ===================== NOTIFICATION PANEL ===================== */
+.notif-wrapper { position: relative; }
+
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  z-index: 500;
+  overflow: hidden;
+  display: none;
+  animation: dropIn 0.2s ease;
+}
+
+body.light .notif-panel { background: #f8fafb; }
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notif-panel.open { display: block; }
+
+.notif-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.notif-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; }
+.notif-clear { font-size: 11px; color: var(--accent2); cursor: pointer; font-family: 'DM Mono', monospace; }
+
+.notif-list { max-height: 320px; overflow-y: auto; }
+
+.notif-item {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 10px; align-items: flex-start;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.notif-item:hover { background: var(--card); }
+.notif-item:last-child { border-bottom: none; }
+.notif-item.unread { background: rgba(99,210,160,0.04); }
+
+.notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
+.notif-dot.blue { background: var(--accent2); }
+.notif-dot.orange { background: var(--accent3); }
+.notif-dot.purple { background: var(--accent4); }
+.notif-dot.grey { background: var(--muted); }
+
+.notif-body { flex: 1; }
+.notif-msg { font-size: 12.5px; color: var(--text); line-height: 1.4; }
+.notif-msg strong { color: var(--accent); }
+.notif-time { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 3px; }
+
+/* ===================== PAGE HEADER ===================== */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; }
+.page-sub { color: var(--muted2); font-size: 13px; margin-top: 2px; }
+
+.header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+/* ===================== BUTTONS ===================== */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+
+.btn:hover { background: var(--card-hover); border-color: rgba(255,255,255,0.15); }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+  font-weight: 600;
+}
+
+.btn-primary:hover { background: #7ae0b4; border-color: #7ae0b4; box-shadow: 0 0 20px rgba(99,210,160,0.3); }
+
+body.light .btn-primary:hover { background: #0fa060; border-color: #0fa060; }
+
+/* Theme toggle */
+.theme-toggle {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover { color: var(--accent3); background: var(--card-hover); }
+
+/* ===================== TICKER ===================== */
+.ticker {
+  background: rgba(99,210,160,0.06);
+  border: 1px solid rgba(99,210,160,0.15);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-bottom: 24px;
+  animation: fadeUp 0.5s 0.05s ease both;
+}
+
+.ticker-label { font-weight: 500; flex-shrink: 0; }
+.ticker-scroll { overflow: hidden; flex: 1; }
+.ticker-inner { display: inline-block; animation: ticker 22s linear infinite; white-space: nowrap; }
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ===================== STATS ===================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+  animation: fadeUp 0.5s 0.1s ease both;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s;
+  cursor: default;
+}
+
+.stat-card:hover {
+  background: var(--card-hover);
+  border-color: rgba(255,255,255,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.stat-card.green::before { background: linear-gradient(90deg, var(--accent), transparent); }
+.stat-card.blue::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+.stat-card.orange::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+.stat-card.purple::before { background: linear-gradient(90deg, var(--accent4), transparent); }
+
+.stat-label { font-size: 11px; color: var(--muted2); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.stat-value { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 700; line-height: 1; }
+.stat-value.green { color: var(--accent); }
+.stat-value.blue { color: var(--accent2); }
+.stat-value.orange { color: var(--accent3); }
+.stat-value.purple { color: var(--accent4); }
+.stat-change { font-size: 11.5px; color: var(--muted2); margin-top: 6px; }
+.stat-change span { color: var(--accent); }
+
+/* ===================== CONTENT GRID ===================== */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 18px;
+  animation: fadeUp 0.5s 0.2s ease both;
+}
+
+/* ===================== CARD ===================== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title { font-family: 'Syne', sans-serif; font-size: 14.5px; font-weight: 700; }
+
+.card-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+
+.badge-green { color: var(--accent); border-color: rgba(99,210,160,0.3); background: rgba(99,210,160,0.08); }
+.badge-blue { color: var(--accent2); border-color: rgba(59,158,255,0.3); background: rgba(59,158,255,0.08); }
+.badge-orange { color: var(--accent3); border-color: rgba(245,158,66,0.3); background: rgba(245,158,66,0.08); }
+
+/* ===================== AGENTS ===================== */
+.agents-section { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-row:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
+
+.agent-row.running::after,
+.agent-row.busy::after,
+.agent-row.idle::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 2px;
+}
+
+.agent-row.running::after { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.agent-row.busy::after { background: var(--accent3); box-shadow: 0 0 10px var(--accent3); }
+.agent-row.idle::after { background: var(--muted); }
+
+.agent-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.agent-info { flex: 1; min-width: 0; }
+.agent-name { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+.agent-task { font-size: 11.5px; color: var(--muted2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.agent-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.status-running { color: var(--accent); background: rgba(99,210,160,0.1); border: 1px solid rgba(99,210,160,0.25); }
+.status-busy { color: var(--accent3); background: rgba(245,158,66,0.1); border: 1px solid rgba(245,158,66,0.25); }
+.status-idle { color: var(--muted2); background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+
+/* ===================== ACTIVITY ===================== */
+.activity-feed { padding: 14px 18px; display: flex; flex-direction: column; }
+
+.activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  animation: fadeIn 0.4s ease both;
+}
+
+.activity-item:last-child { border-bottom: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.dot-green { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.dot-blue { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+.dot-orange { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+.dot-purple { background: var(--accent4); box-shadow: 0 0 6px var(--accent4); }
+
+.activity-text { font-size: 12.5px; color: var(--muted2); line-height: 1.5; }
+.activity-text strong { color: var(--text); font-weight: 600; }
+.activity-time { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+/* ===================== RIGHT COL ===================== */
+.right-col { display: flex; flex-direction: column; gap: 18px; }
+
+/* Workflow */
+.workflow-section { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+
+.workflow-step { display: flex; align-items: flex-start; gap: 12px; }
+
+.step-connector { display: flex; flex-direction: column; align-items: center; }
+
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  flex-shrink: 0;
+  border: 1px solid;
+}
+
+.step-num.done { background: rgba(99,210,160,0.15); border-color: var(--accent); color: var(--accent); }
+.step-num.active { background: rgba(59,158,255,0.15); border-color: var(--accent2); color: var(--accent2); }
+.step-num.pending { background: var(--card); border-color: var(--border); color: var(--muted); }
+
+.step-line { width: 1px; height: 18px; background: var(--border); margin: 3px 0; }
+
+.step-content { padding-top: 4px; flex: 1; }
+.step-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.step-desc { font-size: 11.5px; color: var(--muted2); }
+
+/* Content preview */
+.content-preview { padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+
+.preview-item {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preview-item:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
+
+.preview-platform {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted2);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.platform-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.preview-text { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+.preview-tags { margin-top: 6px; font-size: 11px; color: var(--accent2); font-family: 'DM Mono', monospace; }
+
+/* Mini chart */
+.chart-wrap { padding: 14px 18px 18px; }
+
+.chart-bars { display: flex; align-items: flex-end; gap: 5px; height: 80px; }
+
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+
+.bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: rgba(99,210,160,0.2);
+  border: 1px solid rgba(99,210,160,0.3);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.bar::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(99,210,160,0.3), transparent); }
+
+.bar.active { background: rgba(99,210,160,0.5); border-color: var(--accent); box-shadow: 0 0 12px rgba(99,210,160,0.2); }
+.bar-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); }
+
+.chart-meta { display: flex; justify-content: space-between; margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+
+/* ===================== BOTTOM STRIP ===================== */
+.bottom-strip {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  animation: fadeUp 0.5s 0.3s ease both;
+}
+
+.strip-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.strip-card:hover { background: var(--card-hover); border-color: rgba(255,255,255,0.12); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+
+.strip-icon { font-size: 20px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0; }
+.strip-info { flex: 1; }
+.strip-title { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+.strip-desc { font-size: 11.5px; color: var(--muted2); }
+.strip-arrow { color: var(--muted); font-size: 16px; }
+
+/* ===================== TOAST ===================== */
+.toast-container {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  animation: toastIn 0.3s ease;
+  pointer-events: all;
+  max-width: 300px;
+  font-size: 13px;
+}
+
+body.light .toast { background: #fff; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.toast.out {
+  animation: toastOut 0.3s ease forwards;
+}
+
+@keyframes toastOut {
+  to { opacity: 0; transform: translateX(20px); }
+}
+
+.toast-icon { font-size: 18px; flex-shrink: 0; }
+.toast-text { flex: 1; line-height: 1.4; color: var(--text); }
+.toast-close { color: var(--muted); cursor: pointer; font-size: 16px; }
+
+/* ===================== FAB (mobile) ===================== */
+.fab {
+  display: none;
+  position: fixed;
+  bottom: calc(var(--bottomnav-h) + 16px);
+  right: 16px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #000;
+  font-size: 22px;
+  border: none;
+  cursor: pointer;
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(99,210,160,0.4);
+  transition: all 0.2s;
+  font-weight: 700;
+}
+
+.fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(99,210,160,0.5); }
+
+/* ===================== BOTTOM NAV (MOBILE) ===================== */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--bottomnav-h);
+  background: rgba(8,11,16,0.96);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  z-index: 300;
+  padding: 0 4px;
+  align-items: center;
+  justify-content: space-around;
+}
+
+body.light .bottom-nav { background: rgba(230,238,248,0.98); }
+
+.bn-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.2s;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  position: relative;
+}
+
+.bn-item.active { color: var(--accent); }
+
+.bn-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 24px; height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--accent);
+}
+
+.bn-icon { font-size: 20px; }
+
+/* ===================== SCROLLBAR ===================== */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* ===================== PAGES ===================== */
+.page { display: none; }
+.page.active { display: block; }
+
+/* Agents page */
+.agents-page-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.agent-card-full {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-card-full:hover { background: var(--card-hover); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.2); }
+
+.agent-card-full::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.agent-card-full.running::before { background: linear-gradient(90deg, var(--accent), transparent); }
+.agent-card-full.busy::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+.agent-card-full.idle::before { background: var(--border); }
+
+.acf-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.acf-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.acf-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+.acf-status { margin-left: auto; }
+
+.progress-bar { height: 4px; border-radius: 2px; background: var(--bg3); margin: 8px 0; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.5s; }
+.progress-fill.orange { background: var(--accent3); }
+.progress-fill.muted { background: var(--muted); }
+
+.acf-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.acf-task { font-size: 12.5px; color: var(--muted2); margin-bottom: 10px; }
+
+/* Analytics page */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.an-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.an-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 64px;
+  margin: 16px 0 8px;
+}
+
+.an-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: rgba(99,210,160,0.25);
+  border: 1px solid rgba(99,210,160,0.4);
+  min-height: 4px;
+  transition: height 0.5s;
+}
+
+.an-bar.b2 { background: rgba(59,158,255,0.25); border-color: rgba(59,158,255,0.4); }
+.an-bar.b3 { background: rgba(245,158,66,0.25); border-color: rgba(245,158,66,0.4); }
+
+.an-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13.5px; margin-bottom: 6px; }
+.an-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: var(--accent); }
+.an-value.blue { color: var(--accent2); }
+.an-value.orange { color: var(--accent3); }
+.an-sub { font-size: 11px; color: var(--muted2); margin-top: 4px; }
+
+.platform-breakdown { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+.pb-row { display: flex; flex-direction: column; gap: 4px; }
+.pb-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted2); }
+.pb-label span:last-child { color: var(--text); font-weight: 600; }
+.pb-track { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.pb-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+.pb-fill.b2 { background: var(--accent2); }
+.pb-fill.b3 { background: var(--accent4); }
+
+/* Scheduler page */
+.scheduler-section { animation: fadeUp 0.4s ease both; }
+
+.schedule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sched-list { display: flex; flex-direction: column; gap: 10px; }
+
+.sched-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sched-item:hover { background: var(--card-hover); border-color: rgba(255,255,255,0.12); }
+
+.sched-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.sched-platform { font-size: 18px; flex-shrink: 0; }
+
+.sched-info { flex: 1; min-width: 0; }
+.sched-title { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sched-sub { font-size: 11.5px; color: var(--muted2); }
+
+.sched-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.s-pending { color: var(--accent3); background: rgba(245,158,66,0.1); border: 1px solid rgba(245,158,66,0.25); }
+.s-done { color: var(--accent); background: rgba(99,210,160,0.1); border: 1px solid rgba(99,210,160,0.25); }
+.s-queued { color: var(--accent2); background: rgba(59,158,255,0.1); border: 1px solid rgba(59,158,255,0.25); }
+
+/* Settings page */
+.settings-section { animation: fadeUp 0.4s ease both; }
+.settings-group { margin-bottom: 24px; }
+.settings-group-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+
+.setting-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.setting-row:hover { background: var(--card-hover); }
+
+.setting-icon { font-size: 18px; flex-shrink: 0; }
+.setting-info { flex: 1; }
+.setting-name { font-size: 13.5px; font-weight: 600; }
+.setting-desc { font-size: 12px; color: var(--muted2); margin-top: 2px; }
+.setting-action { color: var(--muted2); font-size: 13px; }
+
+/* Toggle switch */
+.toggle {
+  width: 42px; height: 24px;
+  background: var(--bg3);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.toggle.on { background: var(--accent); border-color: var(--accent); }
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.toggle.on::after { transform: translateX(18px); }
+
+/* Generate page */
+.generate-section { animation: fadeUp 0.4s ease both; }
+
+.gen-form {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.gen-label { font-size: 12px; color: var(--muted2); font-family: 'DM Mono', monospace; margin-bottom: 8px; letter-spacing: 1px; }
+
+.gen-textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13.5px;
+  resize: vertical;
+  min-height: 90px;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 14px;
+}
+
+.gen-textarea:focus { border-color: var(--border-active); }
+
+.gen-opts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+
+.gen-chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Mono', monospace;
+}
+
+.gen-chip.active {
+  border-color: var(--border-active);
+  color: var(--accent);
+  background: rgba(99,210,160,0.08);
+}
+
+.gen-result {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.gen-result-item {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.gen-result-item:hover { background: var(--card-hover); }
+.gen-result-item:last-child { border-bottom: none; }
+
+.gen-item-platform { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted2); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.gen-item-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+.gen-item-tags { font-size: 11px; color: var(--accent2); margin-top: 6px; font-family: 'DM Mono', monospace; }
+.gen-item-actions { display: flex; gap: 8px; margin-top: 10px; }
+.gen-item-btn { font-size: 11px; padding: 4px 10px; }
+
+/* ===================== MOBILE RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  /* Hide PC sidebar */
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .collapse-btn { display: none; }
+
+  /* Show topbar & bottom nav */
+  .topbar { display: flex; }
+  .bottom-nav { display: flex; }
+  .fab { display: flex; }
+
+  /* Push main down for topbar */
+  .main {
+    margin-left: 0 !important;
+    padding: calc(var(--topbar-h) + 16px) 14px calc(var(--bottomnav-h) + 20px);
+  }
+
+  /* Stats 2x2 */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  /* Stat card smaller */
+  .stat-value { font-size: 24px; }
+  .stat-card { padding: 14px 16px; }
+
+  /* Content grid 1 col */
+  .content-grid { grid-template-columns: 1fr; }
+
+  /* Bottom strip 1 col */
+  .bottom-strip { grid-template-columns: 1fr; }
+
+  /* Right col inline */
+  .right-col { gap: 16px; }
+
+  /* Page title smaller */
+  .page-title { font-size: 20px; }
+
+  /* Hide header actions (sync btn) on mobile, keep + btn */
+  .header-actions .btn:not(.btn-primary) { display: none; }
+
+  /* Agents page */
+  .agents-page-grid { grid-template-columns: 1fr; }
+
+  /* Analytics page */
+  .analytics-grid { grid-template-columns: 1fr; }
+
+  /* Toast at bottom of screen above bottomnav */
+  .toast-container { bottom: calc(var(--bottomnav-h) + 16px); right: 14px; left: 14px; }
+  .toast { max-width: 100%; }
+
+  /* Notif panel */
+  .notif-panel { right: -8px; width: calc(100vw - 32px); max-width: 340px; }
+}
+
+@media (min-width: 769px) {
+  .topbar { display: none !important; }
+  .bottom-nav { display: none !important; }
+  .fab { display: none !important; }
+  .sidebar { transform: none !important; }
+}
+
+@media (max-width: 1100px) and (min-width: 769px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .content-grid { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: repeat(2, 1fr); }
+  .agents-page-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============= TOPBAR (mobile) ============= -->
+<div class="topbar">
+  <button class="icon-btn" id="hamburger" aria-label="Menu">☰</button>
+  <div class="topbar-logo">
+    <div class="logo-dot"></div>
+    KREAVO
+  </div>
+  <div class="topbar-actions">
+    <div class="search-bar" style="max-width:160px;">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Cari..." />
+    </div>
+    <div class="notif-wrapper">
+      <button class="icon-btn" id="notif-btn-mobile" aria-label="Notifikasi">
+        🔔
+        <div class="notif-badge"></div>
+      </button>
+      <div class="notif-panel" id="notif-panel-mobile">
+        <!-- injected via JS -->
+      </div>
+    </div>
+    <button class="theme-toggle" id="theme-btn-mobile" title="Ganti tema">🌙</button>
+  </div>
+</div>
+
+<!-- ============= OVERLAY ============= -->
+<div class="overlay" id="overlay"></div>
+
+<!-- ============= SIDEBAR ============= -->
+<aside class="sidebar" id="sidebar">
+  <button class="collapse-btn" id="collapse-btn" title="Collapse">‹</button>
+  <div class="sidebar-inner">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <span class="logo-text">KREAVO</span>
+    </div>
+
+    <span class="nav-label">Main</span>
+    <div class="nav-item active" data-page="dashboard" data-tip="Dashboard"><span class="nav-icon">⬡</span><span class="nav-text"> Dashboard</span></div>
+    <div class="nav-item" data-page="agents" data-tip="AI Agents"><span class="nav-icon">🤖</span><span class="nav-text"> AI Agents</span></div>
+    <div class="nav-item" data-page="generate" data-tip="Generate"><span class="nav-icon">✦</span><span class="nav-text"> Generate</span></div>
+    <div class="nav-item" data-page="scheduler" data-tip="Scheduler"><span class="nav-icon">📅</span><span class="nav-text"> Scheduler</span></div>
+
+    <span class="nav-label">Analytics</span>
+    <div class="nav-item" data-page="analytics" data-tip="Performance"><span class="nav-icon">◈</span><span class="nav-text"> Performance</span></div>
+    <div class="nav-item" data-page="analytics" data-tip="Audience"><span class="nav-icon">◎</span><span class="nav-text"> Audience</span></div>
+    <div class="nav-item" data-page="analytics" data-tip="Automations"><span class="nav-icon">⟳</span><span class="nav-text"> Automations</span></div>
+
+    <span class="nav-label">Account</span>
+    <div class="nav-item" data-page="settings" data-tip="Settings"><span class="nav-icon">⚙</span><span class="nav-text"> Settings</span></div>
+
+    <!-- PC: search + notif + theme -->
+    <div style="padding: 8px 0; display:flex; flex-direction:column; gap:8px; margin-top:4px;" id="pc-utils">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Cari agen, konten..." id="pc-search" />
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div class="notif-wrapper" style="flex:1; position:relative;">
+          <button class="btn" id="notif-btn-pc" style="width:100%; justify-content:center; gap:6px;">
+            🔔 <span style="font-family:'DM Mono',monospace; font-size:10px; background:var(--accent3); color:#000; border-radius:10px; padding:1px 6px;">3</span>
+          </button>
+          <div class="notif-panel" id="notif-panel-pc"></div>
+        </div>
+        <button class="theme-toggle" id="theme-btn-pc" title="Ganti tema">🌙</button>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="avatar">J</div>
+        <div class="user-info">
+          <div class="user-name">Jaj</div>
+          <div class="user-plan">PRO PLAN</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ============= MAIN ============= -->
+<main class="main" id="main">
+
+  <!-- ========== PAGE: DASHBOARD ========== -->
+  <div class="page active" id="page-dashboard">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">Command Center</div>
+        <div class="page-sub" id="live-sub">5 agen aktif · Selasa, 24 Maret 2026</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" id="sync-btn">⟳ Sync Semua</button>
+        <button class="btn btn-primary" id="create-btn">+ Buat Konten</button>
+      </div>
+    </div>
+
+    <div class="ticker">
+      <span class="ticker-label">⬡ LIVE</span>
+      <div class="ticker-scroll">
+        <span class="ticker-inner">
+          Caption Agent selesai generate 12 postingan IG · Reply Agent membalas 8 komentar · Riset Agent menemukan 5 tren viral · Scheduler menjadwalkan 4 konten · Analytics: engagement naik 34% · Caption Agent selesai generate 12 postingan IG · Reply Agent membalas 8 komentar · Riset Agent menemukan 5 tren viral · Scheduler menjadwalkan 4 konten · Analytics: engagement naik 34% ·&nbsp;
+        </span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="stat-label">Konten Dibuat</div>
+        <div class="stat-value green" id="stat-konten">248</div>
+        <div class="stat-change">Bulan ini · <span>+32%</span></div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Auto Reply</div>
+        <div class="stat-value blue">1.4K</div>
+        <div class="stat-change">Komentar dibalas · <span>+18%</span></div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Jam Dihemat</div>
+        <div class="stat-value orange">87</div>
+        <div class="stat-change">Sejak aktif · <span>+12 jam</span></div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">Engagement Rate</div>
+        <div class="stat-value purple">6.8%</div>
+        <div class="stat-change">Rata-rata · <span>+2.1%</span></div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div style="display:flex; flex-direction:column; gap:18px;">
+
+        <!-- Agent Monitor -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🤖 AI Agent Monitor</div>
+            <div class="card-badge badge-green">5 / 5 AKTIF</div>
+          </div>
+          <div class="agents-section">
+            <div class="agent-row running">
+              <div class="agent-icon" style="background:rgba(99,210,160,0.1);">✍️</div>
+              <div class="agent-info">
+                <div class="agent-name">Caption Agent</div>
+                <div class="agent-task">Generating caption TikTok · "Cara hemat uang ala Gen Z…"</div>
+              </div>
+              <div class="agent-status status-running">RUNNING</div>
+            </div>
+            <div class="agent-row running">
+              <div class="agent-icon" style="background:rgba(59,158,255,0.1);">💬</div>
+              <div class="agent-info">
+                <div class="agent-name">Reply Agent</div>
+                <div class="agent-task">Membalas 3 komentar baru di IG · @user_xxx</div>
+              </div>
+              <div class="agent-status status-running">RUNNING</div>
+            </div>
+            <div class="agent-row busy">
+              <div class="agent-icon" style="background:rgba(245,158,66,0.1);">🔍</div>
+              <div class="agent-info">
+                <div class="agent-name">Trend Research Agent</div>
+                <div class="agent-task">Scanning tren viral minggu ini · TikTok ID</div>
+              </div>
+              <div class="agent-status status-busy">BUSY</div>
+            </div>
+            <div class="agent-row running">
+              <div class="agent-icon" style="background:rgba(224,92,255,0.1);">📅</div>
+              <div class="agent-info">
+                <div class="agent-name">Scheduler Agent</div>
+                <div class="agent-task">Menjadwalkan 4 post untuk besok · 08.00 WIB</div>
+              </div>
+              <div class="agent-status status-running">RUNNING</div>
+            </div>
+            <div class="agent-row idle">
+              <div class="agent-icon" style="background:rgba(255,255,255,0.04);">📊</div>
+              <div class="agent-info">
+                <div class="agent-name">Analytics Agent</div>
+                <div class="agent-task">Laporan mingguan selesai · Next run: 18.00 WIB</div>
+              </div>
+              <div class="agent-status status-idle">STANDBY</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⟳ Activity Log</div>
+            <div class="card-badge badge-blue">REALTIME</div>
+          </div>
+          <div class="activity-feed" id="activity-feed">
+            <div class="activity-item" style="animation-delay:0s">
+              <div class="activity-dot dot-green"></div>
+              <div>
+                <div class="activity-text"><strong>Caption Agent</strong> selesai membuat 3 caption IG untuk niche <strong>lifestyle</strong></div>
+                <div class="activity-time">2 menit lalu</div>
+              </div>
+            </div>
+            <div class="activity-item" style="animation-delay:0.1s">
+              <div class="activity-dot dot-blue"></div>
+              <div>
+                <div class="activity-text"><strong>Reply Agent</strong> membalas komentar dari <strong>@sarah_lifestyle</strong> secara otomatis</div>
+                <div class="activity-time">5 menit lalu</div>
+              </div>
+            </div>
+            <div class="activity-item" style="animation-delay:0.2s">
+              <div class="activity-dot dot-orange"></div>
+              <div>
+                <div class="activity-text"><strong>Trend Agent</strong> menemukan topik viral: <strong>"Aesthetic morning routine"</strong> — engagement tinggi</div>
+                <div class="activity-time">11 menit lalu</div>
+              </div>
+            </div>
+            <div class="activity-item" style="animation-delay:0.3s">
+              <div class="activity-dot dot-purple"></div>
+              <div>
+                <div class="activity-text"><strong>Scheduler Agent</strong> berhasil menjadwalkan konten untuk <strong>Rabu pagi</strong> jam 07:30</div>
+                <div class="activity-time">18 menit lalu</div>
+              </div>
+            </div>
+            <div class="activity-item" style="animation-delay:0.4s">
+              <div class="activity-dot dot-green"></div>
+              <div>
+                <div class="activity-text"><strong>Analytics Agent</strong> laporan: engagement naik <strong>34%</strong> dibanding minggu lalu</div>
+                <div class="activity-time">1 jam lalu</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right col -->
+      <div class="right-col">
+
+        <!-- Workflow -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⬡ Workflow Aktif</div>
+            <div class="card-badge badge-orange">IN PROGRESS</div>
+          </div>
+          <div class="workflow-section">
+            <div class="workflow-step">
+              <div class="step-connector"><div class="step-num done">✓</div><div class="step-line"></div></div>
+              <div class="step-content"><div class="step-title">Riset Tren</div><div class="step-desc" style="color:var(--accent);">Selesai · 5 topik ditemukan</div></div>
+            </div>
+            <div class="workflow-step">
+              <div class="step-connector"><div class="step-num done">✓</div><div class="step-line"></div></div>
+              <div class="step-content"><div class="step-title">Generate Caption</div><div class="step-desc" style="color:var(--accent);">Selesai · 12 caption siap</div></div>
+            </div>
+            <div class="workflow-step">
+              <div class="step-connector"><div class="step-num active">3</div><div class="step-line"></div></div>
+              <div class="step-content"><div class="step-title">Review & Edit</div><div class="step-desc">Menunggu persetujuanmu</div></div>
+            </div>
+            <div class="workflow-step">
+              <div class="step-connector"><div class="step-num pending">4</div><div class="step-line"></div></div>
+              <div class="step-content"><div class="step-title">Auto Jadwalkan</div><div class="step-desc">Akan berjalan otomatis</div></div>
+            </div>
+            <div class="workflow-step">
+              <div class="step-connector"><div class="step-num pending">5</div></div>
+              <div class="step-content"><div class="step-title">Monitor Engagement</div><div class="step-desc">Analitik real-time</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Konten -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">✦ Preview Konten</div>
+            <div class="card-badge badge-green">BARU</div>
+          </div>
+          <div class="content-preview">
+            <div class="preview-item">
+              <div class="preview-platform"><div class="platform-dot" style="background:#e05cff"></div>INSTAGRAM</div>
+              <div class="preview-text">5 kebiasaan pagi yang bikin hidupmu lebih produktif tanpa perlu bangun jam 4 ✨</div>
+              <div class="preview-tags">#MorningRoutine #Produktif #LifestyleID</div>
+            </div>
+            <div class="preview-item">
+              <div class="preview-platform"><div class="platform-dot" style="background:#3b9eff"></div>TIKTOK</div>
+              <div class="preview-text">POV: kamu punya AI yang kerja seharian biar kamu bisa fokus bikin konten 🤖⚡</div>
+              <div class="preview-tags">#AIContent #CreatorTips #TikTokID</div>
+            </div>
+            <button class="btn" style="width:100%; justify-content:center;" onclick="navigate('generate')">Lihat Semua (12) →</button>
+          </div>
+        </div>
+
+        <!-- Mini chart -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">◈ Konten Minggu Ini</div></div>
+          <div class="chart-wrap">
+            <div class="chart-bars">
+              <div class="bar-wrap"><div class="bar" style="height:45%"></div><div class="bar-label">Sen</div></div>
+              <div class="bar-wrap"><div class="bar" style="height:60%"></div><div class="bar-label">Sel</div></div>
+              <div class="bar-wrap"><div class="bar" style="height:35%"></div><div class="bar-label">Rab</div></div>
+              <div class="bar-wrap"><div class="bar" style="height:80%"></div><div class="bar-label">Kam</div></div>
+              <div class="bar-wrap"><div class="bar" style="height:55%"></div><div class="bar-label">Jum</div></div>
+              <div class="bar-wrap"><div class="bar active" style="height:95%"></div><div class="bar-label">Sab</div></div>
+              <div class="bar-wrap"><div class="bar" style="height:20%"></div><div class="bar-label">Min</div></div>
+            </div>
+            <div class="chart-meta"><span>Total: 34 konten</span><span>Target: 40/minggu</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="bottom-strip">
+      <div class="strip-card" onclick="navigate('generate')">
+        <div class="strip-icon" style="background:rgba(99,210,160,0.1);">⚡</div>
+        <div class="strip-info"><div class="strip-title">Quick Generate</div><div class="strip-desc">Buat 10 caption sekarang</div></div>
+        <div class="strip-arrow">›</div>
+      </div>
+      <div class="strip-card">
+        <div class="strip-icon" style="background:rgba(59,158,255,0.1);">🔗</div>
+        <div class="strip-info"><div class="strip-title">Hubungkan Akun</div><div class="strip-desc">IG, TikTok, YouTube</div></div>
+        <div class="strip-arrow">›</div>
+      </div>
+      <div class="strip-card" onclick="navigate('analytics')">
+        <div class="strip-icon" style="background:rgba(224,92,255,0.1);">📈</div>
+        <div class="strip-info"><div class="strip-title">Laporan Lengkap</div><div class="strip-desc">Analitik bulan ini</div></div>
+        <div class="strip-arrow">›</div>
+      </div>
+    </div>
+  </div><!-- /dashboard -->
+
+  <!-- ========== PAGE: AI AGENTS ========== -->
+  <div class="page" id="page-agents">
+    <div class="page-header">
+      <div><div class="page-title">🤖 AI Agents</div><div class="page-sub">Kelola semua agen aktif kamu</div></div>
+      <div class="header-actions">
+        <button class="btn btn-primary">+ Tambah Agen</button>
+      </div>
+    </div>
+
+    <div class="agents-page-grid">
+      <div class="agent-card-full running" onclick="showToast('✍️ Caption Agent sedang berjalan','green')">
+        <div class="acf-header">
+          <div class="acf-icon" style="background:rgba(99,210,160,0.1);">✍️</div>
+          <div><div class="acf-name">Caption Agent</div><div style="font-size:12px; color:var(--muted2);">Konten & Copywriting</div></div>
+          <div class="acf-status"><span class="agent-status status-running">RUNNING</span></div>
+        </div>
+        <div class="acf-task">Generating caption TikTok · "Cara hemat uang ala Gen Z…"</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+        <div class="acf-meta"><span>72% selesai</span><span>~3 menit lagi</span></div>
+      </div>
+
+      <div class="agent-card-full running" onclick="showToast('💬 Reply Agent aktif','green')">
+        <div class="acf-header">
+          <div class="acf-icon" style="background:rgba(59,158,255,0.1);">💬</div>
+          <div><div class="acf-name">Reply Agent</div><div style="font-size:12px; color:var(--muted2);">Engagement Otomatis</div></div>
+          <div class="acf-status"><span class="agent-status status-running">RUNNING</span></div>
+        </div>
+        <div class="acf-task">Membalas 3 komentar baru di IG · @user_xxx</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+        <div class="acf-meta"><span>40% selesai</span><span>~8 menit lagi</span></div>
+      </div>
+
+      <div class="agent-card-full busy" onclick="showToast('🔍 Trend Agent sedang busy','orange')">
+        <div class="acf-header">
+          <div class="acf-icon" style="background:rgba(245,158,66,0.1);">🔍</div>
+          <div><div class="acf-name">Trend Research Agent</div><div style="font-size:12px; color:var(--muted2);">Riset & Tren</div></div>
+          <div class="acf-status"><span class="agent-status status-busy">BUSY</span></div>
+        </div>
+        <div class="acf-task">Scanning tren viral minggu ini · TikTok ID</div>
+        <div class="progress-bar"><div class="progress-fill orange" style="width:55%"></div></div>
+        <div class="acf-meta"><span>55% selesai</span><span>~12 menit lagi</span></div>
+      </div>
+
+      <div class="agent-card-full running" onclick="showToast('📅 Scheduler Agent berjalan','green')">
+        <div class="acf-header">
+          <div class="acf-icon" style="background:rgba(224,92,255,0.1);">📅</div>
+          <div><div class="acf-name">Scheduler Agent</div><div style="font-size:12px; color:var(--muted2);">Penjadwalan Konten</div></div>
+          <div class="acf-status"><span class="agent-status status-running">RUNNING</span></div>
+        </div>
+        <div class="acf-task">Menjadwalkan 4 post untuk besok · 08.00 WIB</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:88%"></div></div>
+        <div class="acf-meta"><span>88% selesai</span><span>~1 menit lagi</span></div>
+      </div>
+
+      <div class="agent-card-full idle" onclick="showToast('📊 Analytics Agent standby','grey')">
+        <div class="acf-header">
+          <div class="acf-icon" style="background:rgba(255,255,255,0.04);">📊</div>
+          <div><div class="acf-name">Analytics Agent</div><div style="font-size:12px; color:var(--muted2);">Analitik & Laporan</div></div>
+          <div class="acf-status"><span class="agent-status status-idle">STANDBY</span></div>
+        </div>
+        <div class="acf-task">Laporan mingguan selesai · Next run: 18.00 WIB</div>
+        <div class="progress-bar"><div class="progress-fill muted" style="width:100%"></div></div>
+        <div class="acf-meta"><span>Selesai</span><span>Next: 18:00 WIB</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE: GENERATE ========== -->
+  <div class="page" id="page-generate">
+    <div class="page-header">
+      <div><div class="page-title">✦ Generate Konten</div><div class="page-sub">Buat caption, hashtag & ide konten dengan AI</div></div>
+    </div>
+
+    <div class="generate-section">
+      <div class="gen-form">
+        <div class="gen-label">TOPIK / BRIEF</div>
+        <textarea class="gen-textarea" id="gen-input" placeholder="Contoh: tips hemat uang untuk anak muda, niche lifestyle, tone santai..."></textarea>
+
+        <div class="gen-label">PLATFORM</div>
+        <div class="gen-opts" id="gen-platforms">
+          <div class="gen-chip active" data-val="instagram">Instagram</div>
+          <div class="gen-chip" data-val="tiktok">TikTok</div>
+          <div class="gen-chip" data-val="youtube">YouTube</div>
+          <div class="gen-chip" data-val="twitter">Twitter/X</div>
+        </div>
+
+        <div class="gen-label">TONE</div>
+        <div class="gen-opts" id="gen-tones">
+          <div class="gen-chip active" data-val="santai">Santai</div>
+          <div class="gen-chip" data-val="profesional">Profesional</div>
+          <div class="gen-chip" data-val="lucu">Lucu</div>
+          <div class="gen-chip" data-val="inspiratif">Inspiratif</div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;" id="gen-btn">⚡ Generate Sekarang</button>
+      </div>
+
+      <div class="gen-result" id="gen-result" style="display:none;">
+        <div class="card-header">
+          <div class="card-title">✦ Hasil Generate</div>
+          <div class="card-badge badge-green" id="gen-count-badge">3 konten</div>
+        </div>
+        <div id="gen-results-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE: SCHEDULER ========== -->
+  <div class="page" id="page-scheduler">
+    <div class="page-header">
+      <div><div class="page-title">📅 Scheduler</div><div class="page-sub">Jadwal posting otomatis kamu</div></div>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="showToast('📅 Tambah jadwal baru','blue')">+ Jadwal Baru</button>
+      </div>
+    </div>
+
+    <div class="scheduler-section">
+      <div class="card-header" style="background:var(--card); border-radius:14px 14px 0 0; border:1px solid var(--border);">
+        <div class="card-title">Hari Ini — Selasa, 24 Maret</div>
+        <div class="card-badge badge-orange">4 PENDING</div>
+      </div>
+      <div class="sched-list" style="background:var(--card); border:1px solid var(--border); border-top:none; border-radius:0 0 14px 14px; padding:14px 18px;">
+        <div class="sched-item"><div class="sched-time">07:30</div><div class="sched-platform">📸</div><div class="sched-info"><div class="sched-title">5 kebiasaan pagi yang bikin hidup produktif</div><div class="sched-sub">Instagram · #MorningRoutine</div></div><div class="sched-status s-done">POSTED</div></div>
+        <div class="sched-item"><div class="sched-time">12:00</div><div class="sched-platform">🎵</div><div class="sched-info"><div class="sched-title">POV: kamu punya AI yang kerja seharian</div><div class="sched-sub">TikTok · #AIContent</div></div><div class="sched-status s-pending">PENDING</div></div>
+        <div class="sched-item"><div class="sched-time">15:00</div><div class="sched-platform">📸</div><div class="sched-info"><div class="sched-title">Tips hemat uang ala Gen Z 💸</div><div class="sched-sub">Instagram · #FinanceTips</div></div><div class="sched-status s-queued">QUEUED</div></div>
+        <div class="sched-item"><div class="sched-time">19:00</div><div class="sched-platform">🎵</div><div class="sched-info"><div class="sched-title">Aesthetic morning routine vlog</div><div class="sched-sub">TikTok · #Aesthetic</div></div><div class="sched-status s-queued">QUEUED</div></div>
+        <div class="sched-item"><div class="sched-time">21:00</div><div class="sched-platform">🐦</div><div class="sched-info"><div class="sched-title">Thread: 5 tools AI yang bikin content creator makin produktif</div><div class="sched-sub">Twitter/X · #AITools</div></div><div class="sched-status s-queued">QUEUED</div></div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="card-header" style="background:var(--card); border-radius:14px 14px 0 0; border:1px solid var(--border);">
+          <div class="card-title">Besok — Rabu, 25 Maret</div>
+          <div class="card-badge badge-blue">3 QUEUED</div>
+        </div>
+        <div class="sched-list" style="background:var(--card); border:1px solid var(--border); border-top:none; border-radius:0 0 14px 14px; padding:14px 18px;">
+          <div class="sched-item"><div class="sched-time">08:00</div><div class="sched-platform">📸</div><div class="sched-info"><div class="sched-title">Review produk skincare viral</div><div class="sched-sub">Instagram · #Skincare</div></div><div class="sched-status s-queued">QUEUED</div></div>
+          <div class="sched-item"><div class="sched-time">13:00</div><div class="sched-platform">🎵</div><div class="sched-info"><div class="sched-title">Day in my life · WFH edition</div><div class="sched-sub">TikTok · #DITL</div></div><div class="sched-status s-queued">QUEUED</div></div>
+          <div class="sched-item"><div class="sched-time">20:00</div><div class="sched-platform">📺</div><div class="sched-info"><div class="sched-title">Tutorial: Edit foto aesthetic di HP gratis</div><div class="sched-sub">YouTube Shorts · #Tutorial</div></div><div class="sched-status s-queued">QUEUED</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE: ANALYTICS ========== -->
+  <div class="page" id="page-analytics">
+    <div class="page-header">
+      <div><div class="page-title">◈ Analytics</div><div class="page-sub">Performa konten & engagement kamu</div></div>
+      <div class="header-actions">
+        <button class="btn">📥 Export</button>
+      </div>
+    </div>
+
+    <div class="stats-grid" style="animation-delay:0s;">
+      <div class="stat-card green"><div class="stat-label">Total Reach</div><div class="stat-value green">124K</div><div class="stat-change">Bulan ini · <span>+41%</span></div></div>
+      <div class="stat-card blue"><div class="stat-label">Impressions</div><div class="stat-value blue">890K</div><div class="stat-change">Total · <span>+28%</span></div></div>
+      <div class="stat-card orange"><div class="stat-label">Followers Baru</div><div class="stat-value orange">+2.1K</div><div class="stat-change">Bulan ini · <span>+19%</span></div></div>
+      <div class="stat-card purple"><div class="stat-label">Klik Bio</div><div class="stat-value purple">3.4K</div><div class="stat-change">Total · <span>+55%</span></div></div>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="an-card" style="grid-column: span 1;">
+        <div class="an-title">📊 Engagement per Platform</div>
+        <div class="platform-breakdown">
+          <div class="pb-row"><div class="pb-label"><span>Instagram</span><span>7.2%</span></div><div class="pb-track"><div class="pb-fill" style="width:72%"></div></div></div>
+          <div class="pb-row"><div class="pb-label"><span>TikTok</span><span>9.8%</span></div><div class="pb-track"><div class="pb-fill b2" style="width:98%"></div></div></div>
+          <div class="pb-row"><div class="pb-label"><span>Twitter/X</span><span>3.4%</span></div><div class="pb-track"><div class="pb-fill b3" style="width:34%"></div></div></div>
+          <div class="pb-row"><div class="pb-label"><span>YouTube</span><span>5.1%</span></div><div class="pb-track"><div class="pb-fill" style="width:51%; background:var(--accent3);"></div></div></div>
+        </div>
+      </div>
+
+      <div class="an-card">
+        <div class="an-title">🏆 Top Konten</div>
+        <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+          <div class="preview-item">
+            <div class="preview-platform"><div class="platform-dot" style="background:#3b9eff"></div>TIKTOK</div>
+            <div class="preview-text" style="font-size:12px;">POV: kamu punya AI yang kerja seharian…</div>
+            <div style="margin-top:6px; font-size:11px; font-family:'DM Mono',monospace; color:var(--accent);">128K views · 9.8% engagement</div>
+          </div>
+          <div class="preview-item">
+            <div class="preview-platform"><div class="platform-dot" style="background:#e05cff"></div>INSTAGRAM</div>
+            <div class="preview-text" style="font-size:12px;">5 kebiasaan pagi yang bikin hidup produktif…</div>
+            <div style="margin-top:6px; font-size:11px; font-family:'DM Mono',monospace; color:var(--accent);">34K reach · 7.2% engagement</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="an-card">
+        <div class="an-title">📈 Tren Mingguan</div>
+        <div class="an-chart">
+          <div class="an-bar" style="height:45%"></div>
+          <div class="an-bar" style="height:60%"></div>
+          <div class="an-bar b2" style="height:35%"></div>
+          <div class="an-bar" style="height:80%"></div>
+          <div class="an-bar b3" style="height:55%"></div>
+          <div class="an-bar" style="height:95%"></div>
+          <div class="an-bar b2" style="height:20%"></div>
+        </div>
+        <div class="chart-meta"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div>
+        <div style="margin-top:10px; font-size:12px; color:var(--muted2);">Engagement rate minggu ini rata-rata <span style="color:var(--accent); font-weight:700;">6.8%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE: SETTINGS ========== -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <div><div class="page-title">⚙ Settings</div><div class="page-sub">Konfigurasi akun & preferensi</div></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-group">
+        <div class="settings-group-title">Profil</div>
+        <div class="setting-row">
+          <div class="setting-icon">👤</div>
+          <div class="setting-info"><div class="setting-name">Nama Pengguna</div><div class="setting-desc">Jaj · PRO Plan</div></div>
+          <div class="setting-action">Edit ›</div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-icon">📧</div>
+          <div class="setting-info"><div class="setting-name">Email</div><div class="setting-desc">j***@gmail.com</div></div>
+          <div class="setting-action">Ubah ›</div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Platform Terhubung</div>
+        <div class="setting-row">
+          <div class="setting-icon">📸</div>
+          <div class="setting-info"><div class="setting-name">Instagram</div><div class="setting-desc">@kreavo.id · Terhubung</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-icon">🎵</div>
+          <div class="setting-info"><div class="setting-name">TikTok</div><div class="setting-desc">@kreavo · Terhubung</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-icon">🐦</div>
+          <div class="setting-info"><div class="setting-name">Twitter/X</div><div class="setting-desc">Belum terhubung</div></div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-icon">📺</div>
+          <div class="setting-info"><div class="setting-name">YouTube</div><div class="setting-desc">Belum terhubung</div></div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Notifikasi</div>
+        <div class="setting-row">
+          <div class="setting-icon">🔔</div>
+          <div class="setting-info"><div class="setting-name">Push Notification</div><div class="setting-desc">Notif setiap agen selesai</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-icon">📊</div>
+          <div class="setting-info"><div class="setting-name">Laporan Mingguan</div><div class="setting-desc">Dikirim setiap Senin pagi</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Tampilan</div>
+        <div class="setting-row" id="theme-setting-row" onclick="toggleTheme()">
+          <div class="setting-icon">🎨</div>
+          <div class="setting-info"><div class="setting-name">Mode Tampilan</div><div class="setting-desc" id="theme-desc">Mode Gelap aktif</div></div>
+          <div class="setting-action">Ganti ›</div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Paket</div>
+        <div class="setting-row" style="background: rgba(99,210,160,0.05); border-color: rgba(99,210,160,0.2);">
+          <div class="setting-icon">⭐</div>
+          <div class="setting-info"><div class="setting-name" style="color:var(--accent);">PRO Plan Aktif</div><div class="setting-desc">Semua fitur terbuka · Renewal: 24 Apr 2026</div></div>
+          <div class="setting-action">Kelola ›</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ============= BOTTOM NAV (mobile) ============= -->
+<div class="bottom-nav">
+  <div class="bn-item active" data-page="dashboard"><div class="bn-icon">⬡</div>Home</div>
+  <div class="bn-item" data-page="agents"><div class="bn-icon">🤖</div>Agents</div>
+  <div class="bn-item" data-page="generate"><div class="bn-icon">✦</div>Generate</div>
+  <div class="bn-item" data-page="scheduler"><div class="bn-icon">📅</div>Jadwal</div>
+  <div class="bn-item" data-page="analytics"><div class="bn-icon">◈</div>Analitik</div>
+</div>
+
+<!-- ============= FAB (mobile) ============= -->
+<button class="fab" onclick="navigate('generate')" title="Buat Konten">+</button>
+
+<!-- ============= TOAST CONTAINER ============= -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ============= NOTIF CONTENT TEMPLATE ============= -->
+<template id="notif-tpl">
+  <div class="notif-header">
+    <div class="notif-title">🔔 Notifikasi</div>
+    <div class="notif-clear" onclick="closeNotifs()">Tandai semua dibaca</div>
+  </div>
+  <div class="notif-list">
+    <div class="notif-item unread"><div class="notif-dot"></div><div class="notif-body"><div class="notif-msg"><strong>Caption Agent</strong> selesai membuat 12 caption baru</div><div class="notif-time">2 menit lalu</div></div></div>
+    <div class="notif-item unread"><div class="notif-dot blue"></div><div class="notif-body"><div class="notif-msg"><strong>Reply Agent</strong> membalas 8 komentar otomatis</div><div class="notif-time">15 menit lalu</div></div></div>
+    <div class="notif-item unread"><div class="notif-dot orange"></div><div class="notif-body"><div class="notif-msg"><strong>Trend Agent</strong> menemukan 5 topik viral baru</div><div class="notif-time">32 menit lalu</div></div></div>
+    <div class="notif-item"><div class="notif-dot grey"></div><div class="notif-body"><div class="notif-msg">Laporan mingguan <strong>sudah siap</strong> untuk dilihat</div><div class="notif-time">1 jam lalu</div></div></div>
+    <div class="notif-item"><div class="notif-dot purple"></div><div class="notif-body"><div class="notif-msg"><strong>Scheduler</strong> berhasil posting ke Instagram jam 07:30</div><div class="notif-time">3 jam lalu</div></div></div>
+  </div>
+</template>
+
+<script>
+// ===== INIT =====
+const pages = {};
+document.querySelectorAll('.page').forEach(p => {
+  pages[p.id.replace('page-', '')] = p;
+});
+
+// Inject notif content
+function buildNotifPanel(panelEl) {
+  const tpl = document.getElementById('notif-tpl');
+  panelEl.innerHTML = tpl.innerHTML;
+}
+
+buildNotifPanel(document.getElementById('notif-panel-pc'));
+buildNotifPanel(document.getElementById('notif-panel-mobile'));
+
+// ===== NAVIGATION =====
+function navigate(pageId) {
+  Object.values(pages).forEach(p => p.classList.remove('active'));
+  if (pages[pageId]) pages[pageId].classList.add('active');
+
+  // Update sidebar nav items
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === pageId);
+  });
+
+  // Update bottom nav
+  document.querySelectorAll('.bn-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === pageId);
+  });
+
+  // Close mobile sidebar if open
+  closeMobileSidebar();
+  closeNotifs();
+  window.scrollTo(0, 0);
+}
+
+// Nav items
+document.querySelectorAll('.nav-item[data-page], .bn-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => navigate(item.dataset.page));
+});
+
+// ===== SIDEBAR COLLAPSE (PC) =====
+const sidebar = document.getElementById('sidebar');
+const mainEl = document.getElementById('main');
+const collapseBtn = document.getElementById('collapse-btn');
+let isCollapsed = false;
+
+collapseBtn.addEventListener('click', () => {
+  isCollapsed = !isCollapsed;
+  sidebar.classList.toggle('collapsed', isCollapsed);
+  mainEl.classList.toggle('collapsed-main', isCollapsed);
+  collapseBtn.textContent = isCollapsed ? '›' : '‹';
+  document.documentElement.style.setProperty('--sidebar-w', isCollapsed ? '64px' : '220px');
+});
+
+// ===== MOBILE SIDEBAR =====
+const hamburger = document.getElementById('hamburger');
+const overlay = document.getElementById('overlay');
+
+function closeMobileSidebar() {
+  sidebar.classList.remove('mobile-open');
+  overlay.classList.remove('active');
+}
+
+hamburger.addEventListener('click', () => {
+  const isOpen = sidebar.classList.contains('mobile-open');
+  if (isOpen) { closeMobileSidebar(); }
+  else { sidebar.classList.add('mobile-open'); overlay.classList.add('active'); }
+});
+
+overlay.addEventListener('click', closeMobileSidebar);
+
+// ===== NOTIFICATIONS =====
+function closeNotifs() {
+  document.getElementById('notif-panel-pc').classList.remove('open');
+  document.getElementById('notif-panel-mobile').classList.remove('open');
+}
+
+function toggleNotif(panelId) {
+  const panel = document.getElementById(panelId);
+  const isOpen = panel.classList.contains('open');
+  closeNotifs();
+  if (!isOpen) panel.classList.add('open');
+}
+
+document.getElementById('notif-btn-pc').addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleNotif('notif-panel-pc');
+});
+
+document.getElementById('notif-btn-mobile').addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleNotif('notif-panel-mobile');
+});
+
+document.addEventListener('click', closeNotifs);
+document.querySelectorAll('.notif-panel').forEach(p => p.addEventListener('click', e => e.stopPropagation()));
+
+// ===== THEME TOGGLE =====
+let isDark = true;
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+  const icon = isDark ? '🌙' : '☀️';
+  document.getElementById('theme-btn-pc').textContent = icon;
+  document.getElementById('theme-btn-mobile').textContent = icon;
+  const desc = document.getElementById('theme-desc');
+  if (desc) desc.textContent = isDark ? 'Mode Gelap aktif' : 'Mode Terang aktif';
+  showToast(isDark ? '🌙 Mode Gelap aktif' : '☀️ Mode Terang aktif', 'blue');
+}
+
+document.getElementById('theme-btn-pc').addEventListener('click', toggleTheme);
+document.getElementById('theme-btn-mobile').addEventListener('click', toggleTheme);
+
+// ===== TOAST =====
+const colorMap = {
+  green: 'var(--accent)',
+  blue: 'var(--accent2)',
+  orange: 'var(--accent3)',
+  purple: 'var(--accent4)',
+  grey: 'var(--muted2)'
+};
+
+function showToast(msg, type = 'green') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  const color = colorMap[type] || colorMap.green;
+  toast.innerHTML = `
+    <div class="toast-icon" style="color:${color}">●</div>
+    <div class="toast-text">${msg}</div>
+    <div class="toast-close" onclick="dismissToast(this.parentElement)">✕</div>
+  `;
+  container.appendChild(toast);
+  setTimeout(() => dismissToast(toast), 4000);
+}
+
+function dismissToast(toast) {
+  if (!toast || !toast.parentElement) return;
+  toast.classList.add('out');
+  setTimeout(() => toast.remove(), 320);
+}
+
+// ===== SYNC BUTTON =====
+document.getElementById('sync-btn').addEventListener('click', () => {
+  showToast('⟳ Sinkronisasi semua agen...', 'blue');
+  setTimeout(() => showToast('✅ Semua agen tersinkron', 'green'), 2200);
+});
+
+// ===== CREATE CONTENT BUTTON =====
+document.getElementById('create-btn').addEventListener('click', () => {
+  navigate('generate');
+  setTimeout(() => document.getElementById('gen-input').focus(), 200);
+});
+
+// ===== GENERATE FEATURE =====
+const genBtn = document.getElementById('gen-btn');
+const genResult = document.getElementById('gen-result');
+const genList = document.getElementById('gen-results-list');
+
+// Chip toggle
+document.querySelectorAll('.gen-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.closest('.gen-opts').querySelectorAll('.gen-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
+const sampleResults = [
+  {
+    platform: 'INSTAGRAM', color: '#e05cff',
+    texts: [
+      { text: "5 kebiasaan kecil yang bikin hidupmu berubah besar 🌱✨ Nggak perlu mulai yang besar, cukup konsisten dari hal kecil.", tags: "#LifestyleID #SelfImprovement #HariIni" },
+      { text: "POV: kamu akhirnya nemu cara produktif yang beneran works buat kamu sendiri 💪🔥", tags: "#Produktivitas #Lifestyle #MotivasiHariIni" },
+      { text: "Reminder: kamu nggak harus sempurna. Yang penting terus gerak maju, pelan-pelan aja 🌸", tags: "#SelfLove #MindsetShift #PositiveVibes" },
+    ]
+  },
+  {
+    platform: 'TIKTOK', color: '#3b9eff',
+    texts: [
+      { text: "POV: AI kerja seharian buat kamu sementara kamu fokus bikin konten 🤖⚡ Ini bukan masa depan — ini sekarang!", tags: "#AIContent #CreatorLife #TikTokID" },
+    ]
+  }
+];
+
+genBtn.addEventListener('click', () => {
+  const input = document.getElementById('gen-input').value.trim();
+  const platform = document.querySelector('#gen-platforms .gen-chip.active')?.dataset.val || 'instagram';
+  const tone = document.querySelector('#gen-tones .gen-chip.active')?.dataset.val || 'santai';
+
+  genBtn.textContent = '⟳ Generating...';
+  genBtn.disabled = true;
+
+  setTimeout(() => {
+    genBtn.textContent = '⚡ Generate Sekarang';
+    genBtn.disabled = false;
+
+    const items = sampleResults[0].texts;
+    genList.innerHTML = '';
+    items.forEach((item, i) => {
+      const el = document.createElement('div');
+      el.className = 'gen-result-item';
+      el.innerHTML = `
+        <div class="gen-item-platform"><div class="platform-dot" style="background:#e05cff;width:6px;height:6px;border-radius:50%;"></div>INSTAGRAM</div>
+        <div class="gen-item-text">${item.text}</div>
+        <div class="gen-item-tags">${item.tags}</div>
+        <div class="gen-item-actions">
+          <button class="btn gen-item-btn" onclick="showToast('📋 Disalin ke clipboard','green')">📋 Salin</button>
+          <button class="btn gen-item-btn" onclick="showToast('📅 Ditambahkan ke jadwal','blue')">📅 Jadwalkan</button>
+          <button class="btn gen-item-btn" onclick="showToast('✅ Disetujui!','green')">✓ Approve</button>
+        </div>
+      `;
+      genList.appendChild(el);
+    });
+
+    document.getElementById('gen-count-badge').textContent = `${items.length} konten`;
+    genResult.style.display = 'block';
+    genResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    showToast(`✦ ${items.length} konten berhasil di-generate!`, 'green');
+  }, 1800);
+});
+
+// ===== LIVE ACTIVITY FEED SIMULATION =====
+const liveActivities = [
+  { dot: 'dot-green', msg: '<strong>Caption Agent</strong> selesai membuat caption untuk niche <strong>fashion</strong>' },
+  { dot: 'dot-blue', msg: '<strong>Reply Agent</strong> membalas komentar dari <strong>@budi_creative</strong>' },
+  { dot: 'dot-orange', msg: '<strong>Trend Agent</strong> menemukan topik baru: <strong>"Self-care evening"</strong>' },
+  { dot: 'dot-purple', msg: '<strong>Scheduler</strong> menjadwalkan post untuk <strong>Kamis jam 09:00</strong>' },
+];
+
+setInterval(() => {
+  const feed = document.getElementById('activity-feed');
+  if (!feed) return;
+  const item = liveActivities[Math.floor(Math.random() * liveActivities.length)];
+  const el = document.createElement('div');
+  el.className = 'activity-item';
+  el.style.animationDelay = '0s';
+  el.innerHTML = `
+    <div class="activity-dot ${item.dot}"></div>
+    <div>
+      <div class="activity-text">${item.msg}</div>
+      <div class="activity-time">Baru saja</div>
+    </div>
+  `;
+  feed.prepend(el);
+  while (feed.children.length > 7) feed.removeChild(feed.lastChild);
+}, 8000);
+
+// ===== STAT COUNTER ANIMATION =====
+function animateCounter(el, target, suffix = '') {
+  let start = 0;
+  const step = Math.ceil(target / 40);
+  const interval = setInterval(() => {
+    start += step;
+    if (start >= target) { el.textContent = target + suffix; clearInterval(interval); }
+    else el.textContent = start + suffix;
+  }, 25);
+}
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const statKonten = document.querySelector('.stat-value.green');
+    if (statKonten) animateCounter(statKonten, 248);
+    const statOrange = document.querySelector('.stat-value.orange');
+    if (statOrange) animateCounter(statOrange, 87);
+  }, 300);
+});
+
+// Welcome toast
+setTimeout(() => showToast('👋 Selamat datang, Jaj! 5 agen aktif hari ini.', 'green'), 1000);
+</script>
+</body>
+</html>
